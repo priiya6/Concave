@@ -51,13 +51,13 @@ Backend: 9 passed sequentially. Frontend: 6 passed. Production build passed. Mig
 
 ## Git commits
 - Existing history through `60e6ed1` is pushed.
-- `8920a96` feat: add bonus workflow panels (local, pending push)
-- `c91481e` feat: improve responsive bonus panels (local, pending push)
-- `dbe8b20` test: expand bonus workflow coverage (local, pending push)
-- Documentation finalization is the next commit.
+- `8920a96` feat: add bonus workflow panels (pushed)
+- `c91481e` feat: improve responsive bonus panels (pushed)
+- `dbe8b20` test: expand bonus workflow coverage (pushed)
+- `83666a3` docs: record bonus completion and verification (pushed)
 
 ## Does the latest build and test run pass?
 Yes: backend 9 tests, frontend 6 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
 
 ## Suggested push plan
-- Push `8920a96`, `c91481e`, `dbe8b20`, and the documentation checkpoint together to `origin/main` after reviewing the final clean worktree.
+- `8920a96`, `c91481e`, `dbe8b20`, and `83666a3` are pushed to `origin/main`.
