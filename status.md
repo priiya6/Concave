@@ -12,6 +12,7 @@ Final verification phase: mobile navigation, overdue/assignee filtering, escalat
 - Added backend visibility coverage and frontend interaction tests for the bonus panels.
 - Added accessible mobile navigation, overdue/assignee queue filters, escalation summary cards, interactive notifications, and dashboard active/wall-clock metric labels.
 - Restored automatic background jobs as the documented local default and fixed display-number ticket search plus whitespace-only validation.
+- Added the required idempotent demo scenarios: 10 tickets across all six statuses, 2 internal tickets, 6 saved replies, and seeded notifications.
 
 ## Pending tasks
 - Actual browser/responsive execution and screenshots remain unavailable because no browser executable or Playwright package is installed.
@@ -23,7 +24,7 @@ Final verification phase: mobile navigation, overdue/assignee filtering, escalat
 - Frozen design files are not edited after Phase 1; divergences use `*-v2.md`.
 
 ## Files created/modified
-- Backend: `app/main.py`, `core/config.py`, `.env.example`, `tests/test_api.py`.
+- Backend: `app/main.py`, `core/config.py`, `.env.example`, `scripts/seed.py`, `tests/test_api.py`.
 - Frontend: `src/components.tsx`, `src/components.test.tsx`, `src/main.tsx`, `src/style.css`.
 - Documentation: `README.md`, `RUN_PROJECT.md`, `status.md`.
 
@@ -38,7 +39,7 @@ PASS: downgrade-to-base, upgrade-to-head, reset/seed, and ten-table inspection c
 - Route-level browser automation remains unverified.
 
 ## Test results
-Backend: 11 passed sequentially. Frontend: 7 passed. Production build passed. Migration downgrade/upgrade and reset/seed passed. Live HTTP smoke passed for `/api/health`, Head login, and dashboard summary. A parallel test/migration attempt was correctly rerun sequentially after a SQLite seed race.
+Backend: 12 passed sequentially. Frontend: 7 passed. Production build passed. Migration downgrade/upgrade and reset/seed passed; repeated seed produced 10 tickets, six statuses, 2 internal tickets, and 6 saved replies without duplicates. Live HTTP smoke passed for `/api/health`, Head login, and dashboard summary. A parallel test/migration attempt was correctly rerun sequentially after a SQLite seed race.
 
 ## Known bugs & resolved issues
 - Fixed missing internal ticket data in ticket detail responses and protected internal descriptions from member responses.
@@ -65,7 +66,7 @@ Backend: 11 passed sequentially. Frontend: 7 passed. Production build passed. Mi
 - `d944cda` docs: record final verification fixes (pushed)
 
 ## Does the latest build and test run pass?
-Yes: backend 11 tests, frontend 7 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
+Yes: backend 12 tests, frontend 7 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
 
 ## Suggested push plan
 - `8920a96`, `c91481e`, `dbe8b20`, `83666a3`, `f5ce356`, `3fbf505`, `349bf6e`, and `d944cda` are pushed to `origin/main`.

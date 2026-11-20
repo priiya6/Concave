@@ -15,7 +15,7 @@ See [RUN_PROJECT.md](RUN_PROJECT.md) for the tested Windows PowerShell walkthrou
 
 # 4. Demo Logins and Test Data
 
-Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent2@concave.test` / `Agent@123`; members `member1@concave.test` through `member4@concave.test` / `Member@123`. `python -m app.scripts.seed --reset` creates the user/settings baseline. SQLite data is local and gitignored.
+Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent2@concave.test` / `Agent@123`; members `member1@concave.test` through `member4@concave.test` / `Member@123`. `python -m app.scripts.seed --reset` creates 7 users, 10 representative tickets covering every status/category/priority, 2 internal tickets, 6 saved replies, notifications, TAT targets, and lifecycle settings. SQLite data is local and gitignored.
 
 # 5. Features
 
@@ -39,6 +39,8 @@ The schema contains users, TAT targets, app settings, tickets, messages, ticket 
 | Method | URL | Purpose |
 |---|---|---|
 | POST | `/api/auth/login` | Mock login and signed bearer token |
+| GET | `/api/auth/me` | Reload current authenticated user |
+| GET | `/api/users/staff` | List active staff for assignment |
 | POST/GET | `/api/tickets` | Create a member ticket or list role-scoped tickets |
 | GET | `/api/tickets/{no}` | Ticket detail, conversation, TAT, history, and reopen policy |
 | POST | `/api/tickets/{no}/messages` | Member/agent reply and request-information pause |
@@ -47,13 +49,79 @@ The schema contains users, TAT targets, app settings, tickets, messages, ticket 
 | POST | `/api/tickets/{no}/resolve` | Resolve a ticket |
 | POST | `/api/tickets/{no}/confirm` / `reopen` | Member closure or policy-controlled reopening |
 | GET | `/api/dashboard/summary` | Head performance metrics |
+| GET | `/api/dashboard/member` | Member status counts and awaiting confirmation |
 | GET/PUT | `/api/admin/settings` | Read/update TAT and lifecycle settings |
 | POST | `/api/admin/jobs/run` | Run escalation and auto-close checks |
-| POST/GET | `/api/tickets/{no}/internal-tickets`, `/api/saved-replies` | Bonus workflows |
+| POST | `/api/tickets/{no}/internal-tickets` | Create linked internal work |
+| GET | `/api/internal-tickets` | Staff internal-ticket list |
+| POST | `/api/internal-tickets/{id}/complete` | Complete linked internal work |
+| GET/POST/DELETE | `/api/saved-replies[/{id}]` | List, create and deactivate saved replies |
+| GET/POST | `/api/notifications[/{id}/read]` | List notifications and mark one read |
 
 Ticket list filters include `status`, `category`, `priority`, `overdue=true`, `assignee=me|unassigned|<id>`, and `q` for ticket/member search.
 
-Real request: `POST /api/tickets` with `{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}` returns `201` with `{"ticket_number":"TKT-0019","priority":"high","status":"open",...}`. Responses also include `version`, `messages`, and a server-timed `tat` object.
+Representative request/response examples captured from the local API:
+
+```text
+POST /api/auth/login
+{"email":"member1@concave.test","password":"Member@123"}
+→ 200 {"access_token":"<signed-token>","token_type":"bearer","user":{"role":"member",...}}
+
+POST /api/tickets
+{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}
+→ 201 {"ticket_number":"TKT-0001","priority":"high","status":"open","version":1,"messages":[],"tat":{"state":"running",...}}
+
+GET /api/tickets?q=TKT-0001&overdue=true&assignee=unassigned
+→ 200 {"items":[...],"total":1,"page":1,"page_size":20}
+
+GET /api/tickets/TKT-0001
+→ 200 {"ticket_number":"TKT-0001","messages":[...],"events":[...],"can_reopen":false,...}
+
+GET /api/auth/me or GET /api/users/staff or GET /api/dashboard/member
+→ 200 {"id":1,"role":"head",...} / {"items":[...]} / {"counts":{...},"awaiting_confirmation":[...]}
+
+POST /api/tickets/TKT-0001/messages
+{"body":"Please share the payment reference.","request_info":true,"expected_version":1}
+→ 200 {"status":"in_progress","waiting_for_member":true,"version":2,...}
+
+POST /api/tickets/TKT-0001/assign
+{"assignee_id":2,"expected_version":2}
+→ 200 {"assignee":{"id":2,...},"version":3,...}
+
+POST /api/tickets/TKT-0001/priority
+{"priority":"medium","reason":"Evidence is now available.","expected_version":3}
+→ 200 {"priority":"medium","version":4,...}
+
+POST /api/tickets/TKT-0001/resolve or /confirm or /reopen
+{"expected_version":4} or {"reason":"The issue is still unresolved.","expected_version":4}
+→ 200 {"status":"resolved|closed|reopened","version":5,...}
+
+GET /api/dashboard/summary
+→ 200 {"open":2,"overdue":1,"escalated":1,"resolved_today":0,"avg_resolution_seconds":...,"avg_wall_clock_resolution_seconds":...,"by_category":[...]}
+
+GET /api/admin/settings
+→ 200 {"tat_minutes":{"high":240,"medium":1440,"low":2880},"reopen_window_days":3,"max_reopens":2,"auto_close_days":7}
+PUT /api/admin/settings
+{"tat_minutes":{"high":1,"medium":1440,"low":2880},"reopen_window_days":3,"max_reopens":2,"auto_close_days":7}
+→ 200 {"tat_minutes":{...},"reopen_window_days":3,...}
+
+POST /api/admin/jobs/run
+{}
+→ 200 {"escalated":1,"auto_closed":0}
+
+GET /api/notifications or POST /api/notifications/{id}/read
+→ 200 {"items":[{"ticket_id":4,"message":"...","is_read":false,...}],"unread_count":1} or {"ok":true}
+
+POST /api/tickets/TKT-0001/internal-tickets
+{"team":"finance","title":"Verify ledger","description":"Confirm the finance record.","expected_version":5}
+→ 201 {"internal_number":"INT-0001","status":"open",...}
+
+GET /api/internal-tickets or POST /api/internal-tickets/1/complete
+→ 200 {"items":[...]} or {"ok":true,"status":"done"}
+
+GET /api/saved-replies or POST /api/saved-replies or DELETE /api/saved-replies/{id}
+→ 200 {"items":[{"title":"Payment acknowledgement","body":"..."}]} / 201 {"id":7,...} / 200 {"ok":true}
+```
 
 # 8. Assumptions and Decisions
 
