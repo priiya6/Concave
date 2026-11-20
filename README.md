@@ -1,10 +1,13 @@
 # 1. Project Overview
 
-Concave Insights Support is a local member support-query ticketing system. Members raise and track requests; agents manage a queue; Support Heads monitor TAT and escalation. It runs locally with SQLite and has no paid services or API keys.
+Concave Insights Support is a local member support-query ticketing system.
+Members raise and track requests while agents manage a shared support queue.
+Support Heads monitor TAT, escalations, settings, and resolution performance.
+It runs locally with SQLite and has no paid services or API keys.
 
 # 2. Tech Stack
 
-Python 3.14.2, FastAPI, SQLAlchemy 2, Alembic-compatible metadata, Pydantic v2, signed HMAC bearer tokens, SQLite, pytest/httpx; React 18, TypeScript, Vite, responsive CSS, and Vitest.
+Python 3.14.2, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2, signed HMAC bearer tokens, SQLite, pytest/httpx; React 18, TypeScript, Vite, responsive CSS, and Vitest.
 
 # 3. Setup and Run
 
@@ -21,19 +24,34 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Mocked role login and permissions | Done |
 | Member create/list/detail/messages/confirm/reopen | Done |
 | Category default priority and TAT fields | Done |
-| Agent list/search/filter/assign/reply/request-info/priority/resolve | Partly done (API complete; assignment controls remain basic) |
+| Agent list/search/filter/assign/unassign/reply/request-info/priority/resolve | Done |
 | Head dashboard, escalations, notifications, settings, escalation job | Done (local UI/API) |
-| Optimistic version checks and audit events | Partly done |
-| Internal tickets, saved replies, auto-close | Done (API) |
+| Optimistic version checks and audit events | Done |
+| Internal tickets, saved replies, auto-close | Partly done (API and tested workflow; saved-reply picker/internal panel are not full UI) |
 | Responsive member/staff shell, ticket detail, queue filters, Head settings | Partly done |
 
 # 6. Database Design
 
-The planned schema covers users, TAT targets, settings, tickets, messages, events, notifications, internal tickets, and saved replies. See the frozen [database ERD](design/database-erd.md). The running initial implementation creates the core operational tables from SQLAlchemy metadata.
+The schema contains users, TAT targets, app settings, tickets, messages, ticket events, notifications, internal tickets, and saved replies. Users own tickets and messages; tickets own messages, events, notifications, and internal work; TAT targets define ticket priority deadlines. See the frozen [database ERD](design/database-erd.md). `alembic upgrade head` recreates all ten application tables from a fresh SQLite database.
 
 # 7. API Endpoints
 
-Implemented endpoints include `POST /api/auth/login`, `GET /api/auth/me`, `POST/GET /api/tickets`, `GET /api/tickets/{no}`, message/assign/priority/resolve/confirm/reopen actions, `GET /api/users/staff`, member/head dashboards, notifications, `GET/PUT /api/admin/settings`, `POST /api/admin/jobs/run`, internal-ticket endpoints, and saved-reply endpoints. Example: `POST /api/tickets` with `{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}` returns `201` with a ticket such as `{"ticket_number":"TKT-0001","priority":"high","status":"open"}`.
+| Method | URL | Purpose |
+|---|---|---|
+| POST | `/api/auth/login` | Mock login and signed bearer token |
+| POST/GET | `/api/tickets` | Create a member ticket or list role-scoped tickets |
+| GET | `/api/tickets/{no}` | Ticket detail, conversation, TAT, history, and reopen policy |
+| POST | `/api/tickets/{no}/messages` | Member/agent reply and request-information pause |
+| POST | `/api/tickets/{no}/assign` | Assign or unassign staff |
+| POST | `/api/tickets/{no}/priority` | Change priority with a mandatory reason |
+| POST | `/api/tickets/{no}/resolve` | Resolve a ticket |
+| POST | `/api/tickets/{no}/confirm` / `reopen` | Member closure or policy-controlled reopening |
+| GET | `/api/dashboard/summary` | Head performance metrics |
+| GET/PUT | `/api/admin/settings` | Read/update TAT and lifecycle settings |
+| POST | `/api/admin/jobs/run` | Run escalation and auto-close checks |
+| POST/GET | `/api/tickets/{no}/internal-tickets`, `/api/saved-replies` | Bonus workflows |
+
+Real request: `POST /api/tickets` with `{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}` returns `201` with `{"ticket_number":"TKT-0019","priority":"high","status":"open",...}`. Responses also include `version`, `messages`, and a server-timed `tat` object.
 
 # 8. Assumptions and Decisions
 
@@ -41,4 +59,4 @@ TAT is continuous 24×7, including nights and weekends. Waiting for member pause
 
 # 9. Known Issues and Next Steps
 
-The implementation is locally runnable and the core workflow plus bonus APIs are tested. Remaining limitations are richer assignment/priority dialogs in the staff UI, a generated SQL Alembic revision rather than metadata-backed local creation, a larger frontend test matrix, and browser screenshots. Mermaid CLI and browser automation were unavailable in this environment; no walkthrough video or assessment emails are included.
+The implementation is locally runnable and the core workflow plus bonus APIs are tested. The frontend has focused component coverage rather than a complete route-level test matrix, and browser screenshots were not captured because no browser runtime was available. Mermaid CLI was unavailable because npm was cache-only; no walkthrough video or assessment emails are included.
