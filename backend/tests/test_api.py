@@ -47,6 +47,15 @@ def test_settings_recompute_and_bonus_endpoints():
     r=c.post('/api/saved-replies',headers=head,json={'title':'Greeting','body':'Thanks for contacting Concave Insights.'}); assert r.status_code==201
     assert c.get('/api/saved-replies',headers=auth(c,'agent1@concave.test','Agent@123')).json()['items']
 
+def test_internal_status_is_visible_but_internal_content_is_hidden_to_member():
+    seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); head=auth(c,'head@concave.test','Head@123')
+    t=c.post('/api/tickets',headers=member,json={'category':'other','subject':'Internal visibility','description':'Please verify internal work visibility on this query.'}).json(); no=t['ticket_number']
+    created=c.post(f'/api/tickets/{no}/internal-tickets',headers=head,json={'team':'finance','title':'Review ledger','description':'Private finance instructions for staff only.','expected_version':t['version']})
+    assert created.status_code==201
+    member_detail=c.get(f'/api/tickets/{no}',headers=member).json(); staff_detail=c.get(f'/api/tickets/{no}',headers=head).json()
+    assert member_detail['internal_tickets'][0]['status']=='open' and member_detail['internal_tickets'][0]['title'] is None
+    assert staff_detail['internal_tickets'][0]['title']=='Review ledger'
+
 def test_auto_close_records_history_and_notifies_member():
     seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); agent=auth(c,'agent1@concave.test','Agent@123')
     t=c.post('/api/tickets',headers=member,json={'category':'other','subject':'Old resolved query','description':'Please close this resolved query after the configured period.'}).json(); no=t['ticket_number']; r=c.post(f'/api/tickets/{no}/resolve',headers=agent,json={'expected_version':t['version']}); assert r.status_code==200
