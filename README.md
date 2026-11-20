@@ -21,8 +21,8 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Mocked role login and permissions | Done |
 | Member create/list/detail/messages/confirm/reopen | Done |
 | Category default priority and TAT fields | Done |
-| Agent list/search/filter/assign/reply/request-info/priority/resolve | Partly done |
-| Head dashboard, notifications, settings, escalation job | Partly done |
+| Agent list/search/filter/assign/reply/request-info/priority/resolve | Partly done (API complete; assignment controls remain basic) |
+| Head dashboard, escalations, notifications, settings, escalation job | Done (local UI/API) |
 | Optimistic version checks and audit events | Partly done |
 | Internal tickets, saved replies, auto-close | Done (API) |
 | Responsive member/staff shell, ticket detail, queue filters, Head settings | Partly done |
@@ -41,4 +41,4 @@ TAT is continuous 24×7, including nights and weekends. Waiting for member pause
 
 # 9. Known Issues and Next Steps
 
-The current checkpoint is a functional core and responsive shell, not the complete assessment scope: richer queue/detail pages, background loop, full migration script, bonus features, visual test suite, and seeded scenario matrix remain. Mermaid CLI could not be downloaded in the sandbox because npm was cache-only; the source was manually checked. Later work should add the remaining service-layer tests, full UI routes/components, and a fresh-clone/live HTTP walkthrough. No walkthrough video or assessment emails are included.
+The implementation is locally runnable and the core workflow plus bonus APIs are tested. Remaining limitations are richer assignment/priority dialogs in the staff UI, a generated SQL Alembic revision rather than metadata-backed local creation, a larger frontend test matrix, and browser screenshots. Mermaid CLI and browser automation were unavailable in this environment; no walkthrough video or assessment emails are included.

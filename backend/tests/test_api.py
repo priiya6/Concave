@@ -52,3 +52,11 @@ def test_auto_close_records_history_and_notifies_member():
     t=c.post('/api/tickets',headers=member,json={'category':'other','subject':'Old resolved query','description':'Please close this resolved query after the configured period.'}).json(); no=t['ticket_number']; r=c.post(f'/api/tickets/{no}/resolve',headers=agent,json={'expected_version':t['version']}); assert r.status_code==200
     db=SessionLocal(); row=db.get(Ticket,t['id']); row.resolved_at=now()-timedelta(days=8); db.commit(); assert run_auto_close(db)==1; db.close()
     assert c.get('/api/tickets/'+no,headers=member).json()['status']=='closed'; assert c.get('/api/notifications',headers=member).json()['unread_count']>=1
+
+def test_reopen_policy_reason_window_and_max_attempts():
+    seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); agent=auth(c,'agent1@concave.test','Agent@123')
+    t=c.post('/api/tickets',headers=member,json={'category':'other','subject':'Reopen policy','description':'Please verify the reopen policy on this support query.'}).json(); no=t['ticket_number']; resolved=c.post(f'/api/tickets/{no}/resolve',headers=agent,json={'expected_version':t['version']}).json()
+    assert c.post(f'/api/tickets/{no}/reopen',headers=member,json={'reason':'','expected_version':resolved['version']}).status_code==422
+    reopened=c.post(f'/api/tickets/{no}/reopen',headers=member,json={'reason':'The issue is still present.','expected_version':resolved['version']}); assert reopened.status_code==200 and reopened.json()['status']=='reopened'
+    resolved2=c.post(f'/api/tickets/{no}/resolve',headers=agent,json={'expected_version':reopened.json()['version']}).json(); reopened2=c.post(f'/api/tickets/{no}/reopen',headers=member,json={'reason':'A second check is required.','expected_version':resolved2['version']}); assert reopened2.status_code==200
+    resolved3=c.post(f'/api/tickets/{no}/resolve',headers=agent,json={'expected_version':reopened2.json()['version']}).json(); blocked=c.post(f'/api/tickets/{no}/reopen',headers=member,json={'reason':'One more attempt.','expected_version':resolved3['version']}); assert blocked.status_code==409 and blocked.json()['error']['code']=='reopen_not_allowed'

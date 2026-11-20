@@ -132,7 +132,7 @@ def detail(no:str,db=Depends(get_db),u=Depends(require_user)):
     can=False; reason=None
     if t.status!="resolved": reason="not_resolved"
     elif t.reopen_count>=get_setting(db,"max_reopens"): reason="max_reopens_reached"
-    elif not t.resolved_at or now()-t.resolved_at>timedelta(days=get_setting(db,"reopen_window_days")): reason="window_expired"
+    elif not t.resolved_at or now()-utc(t.resolved_at)>timedelta(days=get_setting(db,"reopen_window_days")): reason="window_expired"
     else: can=True
     out=serialize_ticket(db,t,u.role!="member"); out.update({"can_reopen":can,"reopen_blocked_reason":reason}); return out
 def get_setting(db,key): return db.get(AppSetting,key).value_int
@@ -187,7 +187,7 @@ def reopen(no:str,data:Reopen,db=Depends(get_db),u=Depends(roles("member"))):
     def f(t):
         if t.member_id!=u.id: err("not_found","Ticket not found",404)
         if t.status!="resolved": err("reopen_not_allowed","Only resolved tickets can be reopened",409)
-        if t.reopen_count>=get_setting(db,"max_reopens") or not t.resolved_at or now()-t.resolved_at>timedelta(days=get_setting(db,"reopen_window_days")): err("reopen_not_allowed","This ticket is outside the reopen policy",409)
+        if t.reopen_count>=get_setting(db,"max_reopens") or not t.resolved_at or now()-utc(t.resolved_at)>timedelta(days=get_setting(db,"reopen_window_days")): err("reopen_not_allowed","This ticket is outside the reopen policy",409)
         at=now(); t.status="reopened"; t.reopen_count+=1; t.tat_elapsed_seconds=0; t.tat_running_since=at; t.due_at=at+timedelta(seconds=target(db,t.priority)); t.resolved_at=None; t.resolution_seconds=None; event(db,t,u,"reopened",reason=data.reason); db.add(TicketMessage(ticket_id=t.id,author_id=u.id,body=data.reason,created_at=at))
     return mutate_staff(no,db,u,data.expected_version,f)
 

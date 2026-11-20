@@ -1,7 +1,7 @@
 # Concave Insights checkpoint
 
 ## Current status & phase
-Phase 4/5/6/7 — backend workflows and bonus API surface expanded; responsive ticket detail, queue filters, Head dashboard/settings shell, and notification polling added.
+Final verification phase — core workflows, bonus APIs, responsive UI routes, tests, and live HTTP smoke verified.
 
 ## Completed tasks
 - Confirmed the remote repository was empty; default branch is `main`.
@@ -14,8 +14,8 @@ Phase 4/5/6/7 — backend workflows and bonus API surface expanded; responsive t
 - Added Head settings page, Run checks control, and notification unread polling.
 
 ## Pending tasks
-- Complete staff queue actions and member reopen/confirm dialogs.
-- Add deterministic clock abstraction and migration parity checks.
+- Add richer staff assignment/priority dialogs and expand frontend workflow tests if further assessment polish is needed.
+- Replace metadata-backed Alembic bootstrap with a fully generated SQL revision.
 
 ## Architecture & key decisions
 - Python/FastAPI + SQLAlchemy/Alembic backend; React/TypeScript/Vite/Tailwind frontend.
@@ -36,13 +36,14 @@ Core SQLAlchemy metadata creates the local SQLite schema; `alembic/env.py` suppo
 ✔ login, role shell, member create/list, ticket detail, staff queue shell, head dashboard shell, responsive styling, StatusBadge tests. ✘ full filters/dialogs/settings/notifications UI.
 
 ## Test results
-Backend: 7 passed. Frontend: 2 passed; production build passed. Live HTTP smoke passed for member login, Head login, ticket creation, dashboard, and health. Mermaid CLI could not run because npm was cache-only (`ENOTCACHED`).
+Backend: 8 passed. Frontend: 2 passed; production build passed. Live HTTP smoke passed for member login, Head login, ticket creation, dashboard, and health. No browser executable/Playwright package was available. Mermaid CLI could not run because npm was cache-only (`ENOTCACHED`).
 
 ## Known bugs & resolved issues
 - Remote clone initially failed in the sandbox; rerun with approved network access succeeded and confirmed the remote is empty.
 - Fixed duplicate SQLite index, UTC-naive SQLite datetime comparisons, JSONResponse argument order, pytest import path, and Alembic module path.
 - Fixed live-target serializer regression discovered by the expanded test suite.
 - Vitest worker spawning hit Windows sandbox `EPERM`; switched to single-thread mode and verified tests pass.
+- Browser verification was unavailable; recorded rather than claimed.
 
 ## Exact next steps
 - Finish staff/head controls and member confirmation/reopen UI.
@@ -60,6 +61,7 @@ Backend: 7 passed. Frontend: 2 passed; production build passed. Live HTTP smoke 
 - `033c8c0` feat: complete workflow and bonus API milestone (pushed)
 - `b6654df` feat: finish queue filters and verification polish (pushed)
 - `77a2378` feat: add head settings and notification polling (pushed)
+- `88ce7f2` docs: record pushed UI milestone (pushed)
 
 ## Does the latest build and test run pass?
 Yes for the current checkpoint: backend `pytest -q` (7 passed), frontend `npm test` (2 passed), frontend `npm run build` (passed), and live HTTP smoke passed.
