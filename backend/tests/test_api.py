@@ -14,6 +14,13 @@ def test_member_create_and_isolation():
     r=c.post('/api/tickets',headers=h,json={'category':'payment','subject':'Payment missing','description':'My payment for the completed study is missing.'})
     assert r.status_code==201 and r.json()['priority']=='high'
     other=auth(c,'member2@concave.test','Member@123'); assert c.get('/api/tickets/'+r.json()['ticket_number'],headers=other).status_code==404
+
+def test_ticket_search_accepts_display_number_and_rejects_blank_content():
+    seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); agent=auth(c,'agent1@concave.test','Agent@123')
+    r=c.post('/api/tickets',headers=member,json={'category':'other','subject':'Searchable ticket','description':'This ticket is used to verify display-number search.'}); assert r.status_code==201
+    no=r.json()['ticket_number']; assert any(x['ticket_number']==no for x in c.get('/api/tickets?q='+no,headers=agent).json()['items'])
+    assert c.post('/api/tickets',headers=member,json={'category':'other','subject':'   ','description':'valid description here'}).status_code==422
+    assert c.post(f'/api/tickets/{no}/messages',headers=agent,json={'body':'   ','expected_version':r.json()['version']}).status_code==422
 def test_reasons_and_permissions():
     seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); r=c.post('/api/tickets',headers=member,json={'category':'other','subject':'A question','description':'I need help with my profile information.'}); no=r.json()['ticket_number']; agent=auth(c,'agent1@concave.test','Agent@123')
     assert c.post(f'/api/tickets/{no}/priority',headers=agent,json={'priority':'high','reason':'','expected_version':1}).status_code==422

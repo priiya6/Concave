@@ -111,7 +111,9 @@ def staff(db=Depends(get_db),u=Depends(roles("agent","head"))): return {"items":
 def create_ticket(data:TicketCreate,db:Session=Depends(get_db),u=Depends(roles("member"))):
     cat=data.category.strip();
     if cat not in CATEGORIES: err("validation_error","Unknown category",422)
-    tnow=now(); p=CATEGORIES[cat]; t=Ticket(member_id=u.id,category=cat,subject=data.subject.strip(),description=data.description.strip(),priority=p,status="open",tat_running_since=tnow,due_at=tnow+timedelta(seconds=target(db,p)),created_at=tnow,updated_at=tnow)
+    subject=data.subject.strip(); description=data.description.strip()
+    if len(subject)<3 or len(description)<10: err("validation_error","Subject and description cannot be blank",422)
+    tnow=now(); p=CATEGORIES[cat]; t=Ticket(member_id=u.id,category=cat,subject=subject,description=description,priority=p,status="open",tat_running_since=tnow,due_at=tnow+timedelta(seconds=target(db,p)),created_at=tnow,updated_at=tnow)
     db.add(t); db.flush(); event(db,t,u,"created",new="open"); db.commit(); return serialize_ticket(db,t)
 @app.get("/api/tickets")
 def list_tickets(status:str|None=None,category:str|None=None,priority:str|None=None,overdue:bool=False,q:str|None=None,assignee:str|None=None,page:int=Query(1,ge=1),page_size:int=Query(20,ge=1,le=100),sort:str="created_at",db:Session=Depends(get_db),u=Depends(require_user)):
@@ -127,7 +129,7 @@ def list_tickets(status:str|None=None,category:str|None=None,priority:str|None=N
         try: stmt=stmt.where(Ticket.assignee_id==int(assignee))
         except ValueError: err("validation_error","Invalid assignee filter",422)
     if q:
-        safe_q=q.replace('%','\\%').replace('_','\\_'); text=f"%{safe_q}%"; stmt=stmt.join(User,User.id==Ticket.member_id).where(or_(func.lower(User.name).like(text.lower(),escape="\\"),func.lower(User.email).like(text.lower(),escape="\\"),func.cast(Ticket.id,String).like(text,escape="\\")))
+        raw_q=q.strip(); ticket_q=raw_q[4:] if raw_q.upper().startswith("TKT-") else raw_q; safe_q=raw_q.replace('%','\\%').replace('_','\\_'); text=f"%{safe_q}%"; member_clause=or_(func.lower(User.name).like(text.lower(),escape="\\"),func.lower(User.email).like(text.lower(),escape="\\")); id_clause=Ticket.id==int(ticket_q) if ticket_q.isdigit() else func.cast(Ticket.id,String).like(text,escape="\\"); stmt=stmt.join(User,User.id==Ticket.member_id).where(or_(member_clause,id_clause))
     total=db.scalar(select(func.count()).select_from(stmt.subquery()))
     rows=db.scalars(stmt.order_by(Ticket.created_at.desc()).offset((page-1)*page_size).limit(page_size)).all()
     return {"items":[serialize_ticket(db,t,u.role!="member") for t in rows],"total":total,"page":page,"page_size":page_size}
@@ -148,6 +150,7 @@ def message(no:str,data:MessageCreate,db=Depends(get_db),u=Depends(require_user)
     t=get_ticket(db,no)
     if u.role=="member" and t.member_id!=u.id: err("not_found","Ticket not found",404)
     if t.status in {"resolved","closed"}: err("invalid_transition","This ticket cannot receive messages",409)
+    if not data.body.strip(): err("validation_error","Message cannot be blank",422)
     check_version(t,data.expected_version); at=now(); old=t.status
     if u.role!="member" and t.status in {"open","reopened"}: t.status="in_progress"; event(db,t,u,"status_changed",old, t.status)
     if u.role=="member" and t.waiting_for_member:
