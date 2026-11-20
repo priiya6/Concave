@@ -64,9 +64,11 @@ Backend: 12 passed sequentially. Frontend: 7 passed. Production build passed. Mi
 - `3fbf505` docs: record final refinement checkpoint (pushed)
 - `349bf6e` fix: complete ticket search and automatic jobs (pushed)
 - `d944cda` docs: record final verification fixes (pushed)
+- `66de913` feat: load complete demo ticket scenarios (pushed)
+- `bf68b27` docs: finalize submission documentation (pushed)
 
 ## Does the latest build and test run pass?
 Yes: backend 12 tests, frontend 7 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
 
 ## Suggested push plan
-- `8920a96`, `c91481e`, `dbe8b20`, `83666a3`, `f5ce356`, `3fbf505`, `349bf6e`, and `d944cda` are pushed to `origin/main`.
+- `8920a96`, `c91481e`, `dbe8b20`, `83666a3`, `f5ce356`, `3fbf505`, `349bf6e`, `d944cda`, `66de913`, and `bf68b27` are pushed to `origin/main`.
