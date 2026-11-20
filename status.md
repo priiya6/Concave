@@ -46,11 +46,15 @@ Backend: 3 passed. Frontend: build passed; Vitest reports no test files. Mermaid
 - Add frontend RTL tests and broaden backend workflow/permission/concurrency tests.
 
 ## Git commits
-No commits yet.
+- `3f65dbb` docs: add Day 2 user flow (pushed)
+- `8ae22ab` docs: add database ERD (pushed)
+- `61ec54e` docs: add design README, root README, status and handoff (pushed)
+- `79ad1db` feat: build support ticketing core (local, unpushed)
 
 ## Does the latest build and test run pass?
-No application build exists yet.
+Yes for the current checkpoint: `pytest -q` (3 passed), `npm run build` (passed), `npm test -- --passWithNoTests` (no test files, exit 0).
 
 ## Suggested push plan
 - Phase 1: push the three documentation commits together.
 - Later phases: keep local; push only after review in sensible feature batches.
+- Current local batch: `79ad1db` — push after the remaining implementation and review.
