@@ -25,7 +25,7 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Head dashboard, notifications, settings, escalation job | Partly done |
 | Optimistic version checks and audit events | Partly done |
 | Internal tickets, saved replies, auto-close | Done (API) |
-| Responsive member/staff shell and ticket detail | Partly done |
+| Responsive member/staff shell, ticket detail, queue filters, Head settings | Partly done |
 
 # 6. Database Design
 

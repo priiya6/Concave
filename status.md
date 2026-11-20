@@ -1,7 +1,7 @@
 # Concave Insights checkpoint
 
 ## Current status & phase
-Phase 4/5/6/7 — backend workflows and bonus API surface expanded; responsive ticket detail, queue filters, and Head dashboard shell added.
+Phase 4/5/6/7 — backend workflows and bonus API surface expanded; responsive ticket detail, queue filters, Head dashboard/settings shell, and notification polling added.
 
 ## Completed tasks
 - Confirmed the remote repository was empty; default branch is `main`.
@@ -11,9 +11,10 @@ Phase 4/5/6/7 — backend workflows and bonus API surface expanded; responsive t
 - Backend core API, seed/reset scripts, settings/escalation endpoints, member UI, staff shell, and responsive styling are implemented.
 - Added automatic background job loop, auto-close, internal tickets, saved replies, richer seed data, ticket detail, dashboard metrics UI, and frontend component tests.
 - Added queue status/category/priority/member search controls, database/unexpected-error envelopes, and verified live HTTP login/create/dashboard flow.
+- Added Head settings page, Run checks control, and notification unread polling.
 
 ## Pending tasks
-- Complete staff queue filters/actions, settings/escalations UI, notification bell, and member reopen/confirm dialogs.
+- Complete staff queue actions and member reopen/confirm dialogs.
 - Add deterministic clock abstraction and migration parity checks.
 
 ## Architecture & key decisions
