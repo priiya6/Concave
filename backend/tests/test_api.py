@@ -6,6 +6,7 @@ from app.models import Ticket, TicketEvent, Notification, InternalTicket, SavedR
 from app.main import run_auto_close
 from app.core.clock import now
 from datetime import timedelta, timezone
+from sqlalchemy import select
 
 def auth(c,email,password):
     r=c.post('/api/auth/login',json={'email':email,'password':password}); assert r.status_code==200; return {'Authorization':'Bearer '+r.json()['access_token']}
@@ -21,6 +22,9 @@ def test_ticket_search_accepts_display_number_and_rejects_blank_content():
     no=r.json()['ticket_number']; assert any(x['ticket_number']==no for x in c.get('/api/tickets?q='+no,headers=agent).json()['items'])
     assert c.post('/api/tickets',headers=member,json={'category':'other','subject':'   ','description':'valid description here'}).status_code==422
     assert c.post(f'/api/tickets/{no}/messages',headers=agent,json={'body':'   ','expected_version':r.json()['version']}).status_code==422
+
+def test_seed_is_idempotent_and_covers_statuses():
+    seed(True); seed(False); db=SessionLocal(); statuses={x for x in db.scalars(select(Ticket.status)).all()}; assert len(db.scalars(select(Ticket)).all())==10; assert statuses=={'open','in_progress','resolved','closed','reopened','escalated'}; assert db.query(InternalTicket).count()==2; assert db.query(SavedReply).count()==6; db.close()
 def test_reasons_and_permissions():
     seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); r=c.post('/api/tickets',headers=member,json={'category':'other','subject':'A question','description':'I need help with my profile information.'}); no=r.json()['ticket_number']; agent=auth(c,'agent1@concave.test','Agent@123')
     assert c.post(f'/api/tickets/{no}/priority',headers=agent,json={'priority':'high','reason':'','expected_version':1}).status_code==422
