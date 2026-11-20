@@ -27,7 +27,7 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Agent list/search/filter/assign/unassign/reply/request-info/priority/resolve | Done |
 | Head dashboard, escalations, notifications, settings, escalation job | Done (local UI/API) |
 | Optimistic version checks and audit events | Done |
-| Internal tickets, saved replies, auto-close | Partly done (API and tested workflow; saved-reply picker/internal panel are not full UI) |
+| Internal tickets, saved replies, auto-close, history log | Done (local UI/API; browser verification still pending) |
 | Responsive member/staff shell, ticket detail, queue filters, Head settings | Partly done |
 
 # 6. Database Design
@@ -59,4 +59,4 @@ TAT is continuous 24×7, including nights and weekends. Waiting for member pause
 
 # 9. Known Issues and Next Steps
 
-The implementation is locally runnable and the core workflow plus bonus APIs are tested. The frontend has focused component coverage rather than a complete route-level test matrix, and browser screenshots were not captured because no browser runtime was available. Mermaid CLI was unavailable because npm was cache-only; no walkthrough video or assessment emails are included.
+The implementation is locally runnable and the core workflow plus four bonus UI/API surfaces are covered by focused tests. A complete route-level test matrix and browser screenshots were not captured because no browser runtime was available. Mermaid CLI was unavailable because npm was cache-only; no walkthrough video or assessment emails are included.
