@@ -58,6 +58,8 @@ Backend: 7 passed. Frontend: 2 passed; production build passed. Live HTTP smoke 
 - `0c6ebf6` chore: ignore frontend build metadata (local, unpushed)
 - `3c28e40` fix: make local alembic setup runnable (local, unpushed)
 - `033c8c0` feat: complete workflow and bonus API milestone (pushed)
+- `b6654df` feat: finish queue filters and verification polish (pushed)
+- `77a2378` feat: add head settings and notification polling (pushed)
 
 ## Does the latest build and test run pass?
 Yes for the current checkpoint: backend `pytest -q` (7 passed), frontend `npm test` (2 passed), frontend `npm run build` (passed), and live HTTP smoke passed.
