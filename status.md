@@ -1,7 +1,7 @@
 # Concave Insights checkpoint
 
 ## Current status & phase
-Final refinement phase: mobile navigation, overdue/assignee filtering, escalation context, notifications panel, dashboard metric presentation, and targeted tests implemented; automated verification passed; browser runtime unavailable.
+Final verification phase: mobile navigation, overdue/assignee filtering, escalation context, notifications panel, dashboard metric presentation, exact ticket search, whitespace validation, and targeted tests implemented; automated verification passed; browser runtime unavailable.
 
 ## Completed tasks
 - Preserved the frozen Day 2 design files and incremental Git history.
@@ -11,6 +11,7 @@ Final refinement phase: mobile navigation, overdue/assignee filtering, escalatio
 - Added auto-close configuration and run-check behavior already present in the Head settings UI.
 - Added backend visibility coverage and frontend interaction tests for the bonus panels.
 - Added accessible mobile navigation, overdue/assignee queue filters, escalation summary cards, interactive notifications, and dashboard active/wall-clock metric labels.
+- Restored automatic background jobs as the documented local default and fixed display-number ticket search plus whitespace-only validation.
 
 ## Pending tasks
 - Actual browser/responsive execution and screenshots remain unavailable because no browser executable or Playwright package is installed.
@@ -22,7 +23,7 @@ Final refinement phase: mobile navigation, overdue/assignee filtering, escalatio
 - Frozen design files are not edited after Phase 1; divergences use `*-v2.md`.
 
 ## Files created/modified
-- Backend: `app/main.py`, `tests/test_api.py`.
+- Backend: `app/main.py`, `core/config.py`, `.env.example`, `tests/test_api.py`.
 - Frontend: `src/components.tsx`, `src/components.test.tsx`, `src/main.tsx`, `src/style.css`.
 - Documentation: `README.md`, `RUN_PROJECT.md`, `status.md`.
 
@@ -37,7 +38,7 @@ PASS: downgrade-to-base, upgrade-to-head, reset/seed, and ten-table inspection c
 - Route-level browser automation remains unverified.
 
 ## Test results
-Backend: 10 passed sequentially. Frontend: 7 passed. Production build passed. Migration downgrade/upgrade and reset/seed passed. Live HTTP smoke passed for `/api/health`, Head login, and dashboard summary. A parallel test/migration attempt was correctly rerun sequentially after a SQLite seed race.
+Backend: 11 passed sequentially. Frontend: 7 passed. Production build passed. Migration downgrade/upgrade and reset/seed passed. Live HTTP smoke passed for `/api/health`, Head login, and dashboard summary. A parallel test/migration attempt was correctly rerun sequentially after a SQLite seed race.
 
 ## Known bugs & resolved issues
 - Fixed missing internal ticket data in ticket detail responses and protected internal descriptions from member responses.
@@ -45,6 +46,7 @@ Backend: 10 passed sequentially. Frontend: 7 passed. Production build passed. Mi
 - Windows pytest cache permission warnings remain environmental only; tests pass.
 - Browser and Mermaid rendering verification remain unavailable and are not claimed.
 - Browser and Mermaid rendering verification were unavailable and are not claimed.
+- Clean local `.env.example` now enables the automatic job loop; pytest remains safe because test clients do not run the production lifespan loop.
 
 ## Exact next steps
 - Run the manual browser checklist in `RUN_PROJECT.md` at 375px, 768px, and 1280px.
@@ -61,7 +63,7 @@ Backend: 10 passed sequentially. Frontend: 7 passed. Production build passed. Mi
 - `3fbf505` docs: record final refinement checkpoint (pushed)
 
 ## Does the latest build and test run pass?
-Yes: backend 10 tests, frontend 7 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
+Yes: backend 11 tests, frontend 7 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
 
 ## Suggested push plan
 - `8920a96`, `c91481e`, `dbe8b20`, `83666a3`, `f5ce356`, and `3fbf505` are pushed to `origin/main`.
