@@ -9,4 +9,7 @@ class Priority(Action): priority:str; reason:str=Field(min_length=5,max_length=1
 class Resolve(Action): note:str|None=None
 class Reopen(Action): reason:str=Field(min_length=5,max_length=1000)
 class SettingsUpdate(BaseModel): tat_minutes:dict[str,int]; reopen_window_days:int=Field(ge=1); max_reopens:int=Field(ge=1); auto_close_days:int=Field(ge=1)
+class InternalCreate(BaseModel): team:str; title:str=Field(min_length=3,max_length=150); description:str=Field(min_length=10,max_length=5000); expected_version:int
+class InternalComplete(BaseModel): note:str|None=None
+class SavedReplyCreate(BaseModel): title:str=Field(min_length=2,max_length=100); body:str=Field(min_length=1,max_length=5000); category:str|None=None
 class UserOut(BaseModel): model_config=ConfigDict(from_attributes=True); id:int; name:str; email:str; role:str

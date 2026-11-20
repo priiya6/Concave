@@ -24,8 +24,8 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Agent list/search/filter/assign/reply/request-info/priority/resolve | Partly done |
 | Head dashboard, notifications, settings, escalation job | Partly done |
 | Optimistic version checks and audit events | Partly done |
-| Internal tickets, saved replies, auto-close | Not done |
-| Responsive member/staff shell | Partly done |
+| Internal tickets, saved replies, auto-close | Done (API) |
+| Responsive member/staff shell and ticket detail | Partly done |
 
 # 6. Database Design
 
@@ -33,7 +33,7 @@ The planned schema covers users, TAT targets, settings, tickets, messages, event
 
 # 7. API Endpoints
 
-Implemented endpoints include `POST /api/auth/login`, `GET /api/auth/me`, `POST/GET /api/tickets`, `GET /api/tickets/{no}`, message/assign/priority/resolve/confirm/reopen actions, `GET /api/users/staff`, member/head dashboards, notifications, `GET/PUT /api/admin/settings`, and `POST /api/admin/jobs/run`. Example: `POST /api/tickets` with `{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}` returns `201` with a ticket such as `{"ticket_number":"TKT-0001","priority":"high","status":"open"}`.
+Implemented endpoints include `POST /api/auth/login`, `GET /api/auth/me`, `POST/GET /api/tickets`, `GET /api/tickets/{no}`, message/assign/priority/resolve/confirm/reopen actions, `GET /api/users/staff`, member/head dashboards, notifications, `GET/PUT /api/admin/settings`, `POST /api/admin/jobs/run`, internal-ticket endpoints, and saved-reply endpoints. Example: `POST /api/tickets` with `{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}` returns `201` with a ticket such as `{"ticket_number":"TKT-0001","priority":"high","status":"open"}`.
 
 # 8. Assumptions and Decisions
 

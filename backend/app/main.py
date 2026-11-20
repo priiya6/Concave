@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
+import asyncio, logging
 from fastapi import FastAPI, Depends, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -7,10 +8,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select, or_, func
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db, SessionLocal
-from .models import User, TatTarget, AppSetting, Ticket, TicketMessage, TicketEvent, Notification
+from .models import User, TatTarget, AppSetting, Ticket, TicketMessage, TicketEvent, Notification, InternalTicket, SavedReply
 from .schemas import *
 from .core.security import *
 from .core.clock import now
+from .core.config import settings
+
+log=logging.getLogger(__name__)
 
 CATEGORIES={"payment":"high","eligibility":"medium","survey_issue":"medium","profile_change":"low","other":"low"}
 OPEN={"open","in_progress","reopened","escalated"}
@@ -39,18 +43,17 @@ def roles(*allowed):
 def event(db,t,actor,event_type,old=None,new=None,reason=None): db.add(TicketEvent(ticket_id=t.id,actor_id=actor.id if actor else None,event_type=event_type,old_value=old,new_value=new,reason=reason,created_at=now()))
 def target(db,priority): return db.get(TatTarget,priority).target_minutes*60
 def elapsed(t,at): return t.tat_elapsed_seconds + (int((at-utc(t.tat_running_since)).total_seconds()) if t.tat_running_since else 0)
-def tat(t,at):
+def tat(db,t,at):
     running=t.status in OPEN and not t.waiting_for_member and t.tat_running_since is not None
     e=elapsed(t,at); due=utc(t.due_at)
     state="overdue" if t.status=="escalated" or (running and due and due<=at) else "running" if running else "paused" if t.waiting_for_member else "stopped"
     remaining=max(0,int((due-at).total_seconds())) if due and running else 0
-    return {"state":state,"target_seconds":target_seconds(t),"elapsed_seconds":e,"remaining_seconds":remaining,"due_at":format_dt(due),"as_of":format_dt(at)}
-def target_seconds(t): return {"high":14400,"medium":86400,"low":172800}.get(t.priority,0)
+    return {"state":state,"target_seconds":target(db,t.priority),"elapsed_seconds":e,"remaining_seconds":remaining,"due_at":format_dt(due),"as_of":format_dt(at)}
 def serialize_user(u): return {"id":u.id,"name":u.name,"email":u.email,"role":u.role}
 def serialize_ticket(db,t,staff=False):
     at=now(); msgs=db.scalars(select(TicketMessage).where(TicketMessage.ticket_id==t.id).order_by(TicketMessage.created_at)).all()
     member=db.get(User,t.member_id); assignee=db.get(User,t.assignee_id) if t.assignee_id else None
-    d={"id":t.id,"ticket_number":number(t),"member":{"id":member.id,"name":member.name,"email":member.email},"assignee":serialize_user(assignee) if assignee else None,"category":t.category,"subject":t.subject,"description":t.description,"priority":t.priority,"status":t.status,"waiting_for_member":t.waiting_for_member,"tat":tat(t,at),"due_at":format_dt(t.due_at),"created_at":format_dt(t.created_at),"updated_at":format_dt(t.updated_at),"resolved_at":format_dt(t.resolved_at),"closed_at":format_dt(t.closed_at),"reopen_count":t.reopen_count,"version":t.version,"messages":[{"id":m.id,"body":m.body,"requests_info":m.requests_info,"author":serialize_user(db.get(User,m.author_id)),"created_at":format_dt(m.created_at)} for m in msgs]}
+    d={"id":t.id,"ticket_number":number(t),"member":{"id":member.id,"name":member.name,"email":member.email},"assignee":serialize_user(assignee) if assignee else None,"category":t.category,"subject":t.subject,"description":t.description,"priority":t.priority,"status":t.status,"waiting_for_member":t.waiting_for_member,"tat":tat(db,t,at),"due_at":format_dt(t.due_at),"created_at":format_dt(t.created_at),"updated_at":format_dt(t.updated_at),"resolved_at":format_dt(t.resolved_at),"closed_at":format_dt(t.closed_at),"reopen_count":t.reopen_count,"version":t.version,"messages":[{"id":m.id,"body":m.body,"requests_info":m.requests_info,"author":serialize_user(db.get(User,m.author_id)),"created_at":format_dt(m.created_at)} for m in msgs]}
     if staff:
         d["escalation_reason"]=t.escalation_reason; d["events"]=[{"id":e.id,"event_type":e.event_type,"old_value":e.old_value,"new_value":e.new_value,"reason":e.reason,"actor":serialize_user(db.get(User,e.actor_id)) if e.actor_id else None,"created_at":format_dt(e.created_at)} for e in db.scalars(select(TicketEvent).where(TicketEvent.ticket_id==t.id).order_by(TicketEvent.created_at)).all()]
     return d
@@ -61,7 +64,19 @@ def touch(t,at): t.version+=1; t.updated_at=at
 @asynccontextmanager
 async def lifespan(app):
     Base.metadata.create_all(engine)
-    yield
+    task=None
+    if settings.enable_background_jobs:
+        async def loop():
+            while True:
+                try:
+                    await asyncio.to_thread(run_jobs)
+                except Exception:
+                    log.exception("background job failed")
+                await asyncio.sleep(settings.escalation_interval_seconds)
+        task=asyncio.create_task(loop())
+    try: yield
+    finally:
+        if task: task.cancel()
 app=FastAPI(title="Concave Insights Support API",lifespan=lifespan)
 app.add_middleware(CORSMiddleware,allow_origins=["http://localhost:5173","http://127.0.0.1:5173"],allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
 @app.exception_handler(RequestValidationError)
@@ -185,7 +200,7 @@ def member_dashboard(db=Depends(get_db),u=Depends(roles("member"))):
     rows=db.scalars(select(Ticket).where(Ticket.member_id==u.id)).all(); return {"counts":{s:sum(t.status==s for t in rows) for s in ["open","in_progress","resolved","closed","reopened","escalated"]},"awaiting_confirmation":[serialize_ticket(db,t) for t in rows if t.status=="resolved"]}
 @app.get("/api/dashboard/summary")
 def summary(db=Depends(get_db),u=Depends(roles("head"))):
-    rows=db.scalars(select(Ticket)).all(); active=[t for t in rows if t.status in OPEN]; at=now(); overdue=[t for t in active if t.status=="escalated" or (t.due_at and t.due_at<=at and not t.waiting_for_member)]; resolved=[t for t in rows if t.resolved_at and t.status in {"resolved","closed"} and t.resolved_at.date()==at.date()]; vals=[t.resolution_seconds for t in rows if t.resolution_seconds is not None]; cats=[{"category":c,"total":sum(t.category==c for t in rows),"active":sum(t.category==c and t in active for t in rows)} for c in CATEGORIES]; return {"open":len(active),"overdue":len(overdue),"escalated":sum(t.status=="escalated" for t in rows),"resolved_today":len(resolved),"avg_resolution_seconds":sum(vals)/len(vals) if vals else 0,"avg_wall_clock_resolution_seconds":sum((t.resolved_at-t.created_at).total_seconds() for t in rows if t.resolved_at)/sum(bool(t.resolved_at) for t in rows) if any(t.resolved_at for t in rows) else 0,"unassigned":sum(t.assignee_id is None and t in active for t in rows),"by_category":cats}
+    rows=db.scalars(select(Ticket)).all(); active=[t for t in rows if t.status in OPEN]; at=now(); overdue=[t for t in active if t.status=="escalated" or (t.due_at and utc(t.due_at)<=at and not t.waiting_for_member)]; resolved=[t for t in rows if t.resolved_at and t.status in {"resolved","closed"} and utc(t.resolved_at).date()==at.date()]; vals=[t.resolution_seconds for t in rows if t.resolution_seconds is not None]; cats=[{"category":c,"total":sum(t.category==c for t in rows),"active":sum(t.category==c and t in active for t in rows)} for c in CATEGORIES]; wall=[(utc(t.resolved_at)-utc(t.created_at)).total_seconds() for t in rows if t.resolved_at]; return {"open":len(active),"overdue":len(overdue),"escalated":sum(t.status=="escalated" for t in rows),"resolved_today":len(resolved),"avg_resolution_seconds":sum(vals)/len(vals) if vals else 0,"avg_wall_clock_resolution_seconds":sum(wall)/len(wall) if wall else 0,"unassigned":sum(t.assignee_id is None and t in active for t in rows),"by_category":cats}
 
 @app.get("/api/admin/settings")
 def settings_get(db=Depends(get_db),u=Depends(roles("agent","head"))):
@@ -206,5 +221,44 @@ def run_escalation(db):
         for recipient in recipients: db.add(Notification(user_id=recipient.id,ticket_id=t.id,type="escalation",message=f"{number(t)} has breached its {t.priority} target",created_at=at))
         count+=1
     db.commit(); return count
+def run_auto_close(db):
+    at=now(); days=get_setting(db,"auto_close_days"); count=0
+    for t in db.scalars(select(Ticket).where(Ticket.status=="resolved",Ticket.resolved_at!=None)).all():
+        if utc(t.resolved_at)+timedelta(days=days)<=at:
+            t.status="closed"; t.closed_at=at; t.version+=1; t.updated_at=at; event(db,t,None,"auto_closed","resolved","closed"); db.add(Notification(user_id=t.member_id,ticket_id=t.id,type="auto_closed",message=f"{number(t)} was closed automatically",created_at=at)); count+=1
+    db.commit(); return count
+def run_jobs():
+    db=SessionLocal()
+    try: return {"escalated":run_escalation(db),"auto_closed":run_auto_close(db)}
+    finally: db.close()
 @app.post("/api/admin/jobs/run")
-def jobs(db=Depends(get_db),u=Depends(roles("head"))): return {"escalated":run_escalation(db),"auto_closed":0}
+def jobs(db=Depends(get_db),u=Depends(roles("head"))): return {"escalated":run_escalation(db),"auto_closed":run_auto_close(db)}
+
+@app.post("/api/tickets/{no}/internal-tickets",status_code=201)
+def internal_create(no:str,data:InternalCreate,db=Depends(get_db),u=Depends(roles("agent","head"))):
+    t=get_ticket(db,no); check_version(t,data.expected_version)
+    if data.team not in {"rewards","finance","technical","operations"}: err("validation_error","Unknown internal team",422)
+    at=now(); item=InternalTicket(ticket_id=t.id,team=data.team,title=data.title.strip(),description=data.description.strip(),created_by=u.id,created_at=at); db.add(item); event(db,t,u,"internal_ticket_created",new=data.team); touch(t,at); db.commit(); return {"id":item.id,"internal_number":f"INT-{item.id:04d}","team":item.team,"title":item.title,"description":item.description,"status":item.status,"created_at":format_dt(item.created_at)}
+@app.get("/api/internal-tickets")
+def internal_list(db=Depends(get_db),u=Depends(roles("agent","head"))):
+    rows=db.scalars(select(InternalTicket).order_by(InternalTicket.created_at.desc())).all(); return {"items":[{"id":x.id,"internal_number":f"INT-{x.id:04d}","ticket_number":f"TKT-{x.ticket_id:04d}","team":x.team,"title":x.title,"description":x.description,"status":x.status,"completion_note":x.completion_note} for x in rows]}
+@app.post("/api/internal-tickets/{internal_id}/complete")
+def internal_complete(internal_id:int,data:InternalComplete,db=Depends(get_db),u=Depends(roles("agent","head"))):
+    item=db.get(InternalTicket,internal_id)
+    if not item: err("not_found","Internal ticket not found",404)
+    if item.status=="done": err("conflict","Internal ticket is already complete",409)
+    at=now(); item.status="done"; item.completed_by=u.id; item.completed_at=at; item.completion_note=data.note; t=db.get(Ticket,item.ticket_id); event(db,t,u,"internal_ticket_done",new=item.team,reason=data.note); db.add(Notification(user_id=t.member_id,ticket_id=t.id,type="internal_done",message=f"Internal check completed for {number(t)}",created_at=at)); db.commit(); return {"ok":True,"status":"done"}
+@app.get("/api/saved-replies")
+def saved_list(category:str|None=None,db=Depends(get_db),u=Depends(roles("agent","head"))):
+    stmt=select(SavedReply).where(SavedReply.is_active==True)
+    if category: stmt=stmt.where((SavedReply.category==category)|(SavedReply.category==None))
+    rows=db.scalars(stmt.order_by(SavedReply.title)).all(); return {"items":[{"id":x.id,"title":x.title,"body":x.body,"category":x.category} for x in rows]}
+@app.post("/api/saved-replies",status_code=201)
+def saved_create(data:SavedReplyCreate,db=Depends(get_db),u=Depends(roles("head"))):
+    if data.category and data.category not in CATEGORIES: err("validation_error","Unknown category",422)
+    at=now(); item=SavedReply(title=data.title.strip(),body=data.body.strip(),category=data.category,created_by=u.id,created_at=at,updated_at=at); db.add(item); db.commit(); return {"id":item.id,"title":item.title,"body":item.body,"category":item.category}
+@app.delete("/api/saved-replies/{reply_id}")
+def saved_delete(reply_id:int,db=Depends(get_db),u=Depends(roles("head"))):
+    item=db.get(SavedReply,reply_id)
+    if not item: err("not_found","Saved reply not found",404)
+    item.is_active=False; item.updated_at=now(); db.commit(); return {"ok":True}
