@@ -65,7 +65,7 @@ Backend: 8 passed. Frontend: 2 passed; production build passed. Live HTTP smoke 
 - `17f30d4` feat: complete member and escalation workflows (pushed)
 
 ## Does the latest build and test run pass?
-Yes for the current checkpoint: backend `pytest -q` (7 passed), frontend `npm test` (2 passed), frontend `npm run build` (passed), and live HTTP smoke passed.
+Yes for the current checkpoint: `alembic upgrade head`, `python -m app.scripts.reset_db`, backend `pytest -q` (8 passed), frontend `npm test` (2 passed), frontend `npm run build` (passed), and live HTTP smoke passed.
 
 ## Suggested push plan
 - Phase 1: push the three documentation commits together.
