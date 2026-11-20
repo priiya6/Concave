@@ -50,6 +50,8 @@ Backend: 3 passed. Frontend: build passed; Vitest reports no test files. Mermaid
 - `8ae22ab` docs: add database ERD (pushed)
 - `61ec54e` docs: add design README, root README, status and handoff (pushed)
 - `79ad1db` feat: build support ticketing core (local, unpushed)
+- `0c6ebf6` chore: ignore frontend build metadata (local, unpushed)
+- `3c28e40` fix: make local alembic setup runnable (local, unpushed)
 
 ## Does the latest build and test run pass?
 Yes for the current checkpoint: `pytest -q` (3 passed), `npm run build` (passed), `npm test -- --passWithNoTests` (no test files, exit 0).
