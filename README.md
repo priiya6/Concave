@@ -28,7 +28,7 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Head dashboard, escalations, notifications, settings, escalation job | Done (local UI/API) |
 | Optimistic version checks and audit events | Done |
 | Internal tickets, saved replies, auto-close, history log | Done (local UI/API; browser verification still pending) |
-| Responsive member/staff shell, ticket detail, queue filters, Head settings | Partly done |
+| Responsive member/staff shell, mobile navigation, ticket detail, queue filters, Head settings | Done (browser screenshots still pending) |
 
 # 6. Database Design
 
@@ -50,6 +50,8 @@ The schema contains users, TAT targets, app settings, tickets, messages, ticket 
 | GET/PUT | `/api/admin/settings` | Read/update TAT and lifecycle settings |
 | POST | `/api/admin/jobs/run` | Run escalation and auto-close checks |
 | POST/GET | `/api/tickets/{no}/internal-tickets`, `/api/saved-replies` | Bonus workflows |
+
+Ticket list filters include `status`, `category`, `priority`, `overdue=true`, `assignee=me|unassigned|<id>`, and `q` for ticket/member search.
 
 Real request: `POST /api/tickets` with `{"category":"payment","subject":"Payment missing","description":"My completed study payment is missing."}` returns `201` with `{"ticket_number":"TKT-0019","priority":"high","status":"open",...}`. Responses also include `version`, `messages`, and a server-timed `tat` object.
 

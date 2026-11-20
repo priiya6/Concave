@@ -1,7 +1,7 @@
 # Concave Insights checkpoint
 
 ## Current status & phase
-Final completion phase: mandatory workflows and all four bonus UI/API workflows implemented; automated verification passed; browser runtime unavailable.
+Final refinement phase: mobile navigation, overdue/assignee filtering, escalation context, notifications panel, dashboard metric presentation, and targeted tests implemented; automated verification passed; browser runtime unavailable.
 
 ## Completed tasks
 - Preserved the frozen Day 2 design files and incremental Git history.
@@ -10,6 +10,7 @@ Final completion phase: mandatory workflows and all four bonus UI/API workflows 
 - Added agent saved-reply insertion with editable composer and Head saved-reply create/deactivate management.
 - Added auto-close configuration and run-check behavior already present in the Head settings UI.
 - Added backend visibility coverage and frontend interaction tests for the bonus panels.
+- Added accessible mobile navigation, overdue/assignee queue filters, escalation summary cards, interactive notifications, and dashboard active/wall-clock metric labels.
 
 ## Pending tasks
 - Actual browser/responsive execution and screenshots remain unavailable because no browser executable or Playwright package is installed.
@@ -29,19 +30,20 @@ Final completion phase: mandatory workflows and all four bonus UI/API workflows 
 PASS: downgrade-to-base, upgrade-to-head, reset/seed, and ten-table inspection completed. Internal ticket detail serialization exposes only team/status/title metadata to members; staff receive full internal fields.
 
 ## API implementation status
-- PASS: auth, permissions, ticket lifecycle, assignment/unassignment, priority reasons, TAT, escalation, notifications, dashboard, settings/jobs, internal tickets, saved replies, auto-close, validation, and error envelopes.
+- PASS: auth, permissions, ticket lifecycle, assignment/unassignment, priority reasons, TAT, escalation, notifications, dashboard, settings/jobs, internal tickets, saved replies, auto-close, validation, error envelopes, overdue filtering, and assignee filtering.
 
 ## Frontend implementation status
-- PASS: member confirmation/reopen, staff actions, Head dashboard/escalations/settings, saved-reply editor/admin, internal-ticket create/complete panel, history panel, member-safe internal status, loading/empty/error states, and responsive CSS.
+- PASS: member confirmation/reopen, staff actions, Head dashboard/escalations/settings, saved-reply editor/admin, internal-ticket create/complete panel, history panel, member-safe internal status, mobile navigation, interactive notifications, queue filters, loading/empty/error states, and responsive CSS.
 - Route-level browser automation remains unverified.
 
 ## Test results
-Backend: 9 passed sequentially. Frontend: 6 passed. Production build passed. Migration downgrade/upgrade and reset/seed passed. Live HTTP smoke passed for `/api/health`, Head login, and dashboard summary. A parallel test/migration attempt was correctly rerun sequentially after a SQLite seed race.
+Backend: 10 passed sequentially. Frontend: 7 passed. Production build passed. Migration downgrade/upgrade and reset/seed passed. Live HTTP smoke passed for `/api/health`, Head login, and dashboard summary. A parallel test/migration attempt was correctly rerun sequentially after a SQLite seed race.
 
 ## Known bugs & resolved issues
 - Fixed missing internal ticket data in ticket detail responses and protected internal descriptions from member responses.
 - Fixed callback typing and test-environment issues in the new panels.
 - Windows pytest cache permission warnings remain environmental only; tests pass.
+- Browser and Mermaid rendering verification remain unavailable and are not claimed.
 - Browser and Mermaid rendering verification were unavailable and are not claimed.
 
 ## Exact next steps
@@ -55,9 +57,10 @@ Backend: 9 passed sequentially. Frontend: 6 passed. Production build passed. Mig
 - `c91481e` feat: improve responsive bonus panels (pushed)
 - `dbe8b20` test: expand bonus workflow coverage (pushed)
 - `83666a3` docs: record bonus completion and verification (pushed)
+- `f5ce356` feat: refine queue navigation and support insights (local, pending push)
 
 ## Does the latest build and test run pass?
-Yes: backend 9 tests, frontend 6 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
+Yes: backend 10 tests, frontend 7 tests, frontend production build, migration/reset/seed, and live HTTP smoke pass. Browser verification is not available.
 
 ## Suggested push plan
-- `8920a96`, `c91481e`, `dbe8b20`, and `83666a3` are pushed to `origin/main`.
+- `8920a96`, `c91481e`, `dbe8b20`, and `83666a3` are pushed; push `f5ce356` with the final documentation checkpoint.
