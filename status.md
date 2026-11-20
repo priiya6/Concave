@@ -1,17 +1,18 @@
 # Concave Insights checkpoint
 
 ## Current status & phase
-Phase 1 — frozen design and repository checkpoint complete; committing/pushing now.
+Phase 2/3 — core backend and responsive frontend shell implemented; local checkpoint ready.
 
 ## Completed tasks
 - Confirmed the remote repository was empty; default branch is `main`.
 - Confirmed local tools: Python 3.14.2, Node 22.18.0, npm 11.12.1, Git 2.50.1.
 - Added frozen Day 2 flow/ERD design, repository hygiene, handoff, and initial README.
 - Mermaid CLI attempt was blocked because npm is offline/cache-only; source blocks were manually checked and will be revalidated when package access is available.
+- Backend core API, seed/reset scripts, settings/escalation endpoints, member UI, staff shell, and responsive styling are implemented.
 
 ## Pending tasks
-- Commit and push the three Phase 1 documentation commits.
-- Build backend foundations, frontend shell, workflows, tests, and final documentation.
+- Add full service-layer TAT/escalation/reopen tests and expand seed scenarios.
+- Add detailed staff/head routes, dialogs, notifications UI, and bonus features.
 
 ## Architecture & key decisions
 - Python/FastAPI + SQLAlchemy/Alembic backend; React/TypeScript/Vite/Tailwind frontend.
@@ -23,25 +24,26 @@ Phase 1 — frozen design and repository checkpoint complete; committing/pushing
 - Design: `design/user-flow.md`, `design/database-erd.md`, `design/README.md`.
 
 ## Database & migration status
-Not started. ERD is the authoritative planned schema.
+Core SQLAlchemy metadata creates the local SQLite schema; `alembic/env.py` supports local `upgrade head` by creating metadata. A checked SQL migration still needs to be generated.
 
 ## API implementation status
-No endpoints implemented yet.
+✔ auth, users/staff, ticket workflow actions, notifications, dashboards, admin settings/jobs. ✘ internal tickets, saved replies, complete background sweep.
 
 ## Frontend implementation status
-No frontend implemented yet.
+✔ login, role shell, member create/list, staff queue shell, responsive styling. ✘ ticket detail route, full filters/dialogs/head settings pages.
 
 ## Test results
-No application tests yet. Mermaid source blocks are balanced and syntactically conservative; `npx -y @mermaid-js/mermaid-cli` could not run because the npm registry is unavailable in the sandbox (`ENOTCACHED`).
+Backend: 3 passed. Frontend: build passed; Vitest reports no test files. Mermaid CLI could not run because npm was cache-only (`ENOTCACHED`).
 
 ## Known bugs & resolved issues
 - Remote clone initially failed in the sandbox; rerun with approved network access succeeded and confirmed the remote is empty.
+- Fixed duplicate SQLite index, UTC-naive SQLite datetime comparisons, JSONResponse argument order, and pytest import path.
 
 ## Exact next steps
-- Render/parse Mermaid diagrams and fix any syntax errors.
-- Make the three Phase 1 commits and push `main`.
-- Scaffold backend configuration, database, models, migration, auth, and seed.
-- Scaffold frontend shell and login.
+- Add UTCDateTime decorator and generated initial migration.
+- Implement background escalation/auto-close loop and full target recomputation tests.
+- Build staff ticket detail, head dashboard/settings/escalations, and notification UI.
+- Add frontend RTL tests and broaden backend workflow/permission/concurrency tests.
 
 ## Git commits
 No commits yet.
