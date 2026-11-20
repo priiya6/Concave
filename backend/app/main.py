@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, or_, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db, SessionLocal
 from .models import User, TatTarget, AppSetting, Ticket, TicketMessage, TicketEvent, Notification, InternalTicket, SavedReply
@@ -85,6 +86,12 @@ async def validation(_,exc): return JSONResponse(content={"error":{"code":"valid
 async def http_error(_,exc):
     detail=exc.detail if isinstance(exc.detail,dict) else {"code":"http_error","message":str(exc.detail)}
     return JSONResponse(content={"error":detail},status_code=exc.status_code)
+@app.exception_handler(IntegrityError)
+async def integrity(_,exc):
+    log.warning("database integrity error: %s",exc); return JSONResponse(content={"error":{"code":"conflict","message":"That change conflicts with existing data."}},status_code=409)
+@app.exception_handler(Exception)
+async def unexpected(_,exc):
+    log.exception("unhandled application error",exc_info=exc); return JSONResponse(content={"error":{"code":"server_error","message":"An unexpected server error occurred."}},status_code=500)
 
 @app.get("/api/health")
 def health(): return {"ok":True}

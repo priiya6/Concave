@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 backend/pytest-cache-files-*/
+**/pytest-cache-files-*/
 .mypy_cache/
 .env
 backend/data/
