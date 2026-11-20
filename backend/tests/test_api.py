@@ -38,6 +38,14 @@ def test_escalation_boundary_notifications_and_event():
     assert c.get('/api/notifications',headers=head).json()['unread_count']>=1
     db=SessionLocal(); assert db.query(TicketEvent).filter_by(ticket_id=t['id'],event_type='escalated').count()==1; db.close()
 
+def test_queue_overdue_and_assignee_filters():
+    seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); agent=auth(c,'agent1@concave.test','Agent@123')
+    t=c.post('/api/tickets',headers=member,json={'category':'payment','subject':'Filter ticket','description':'This ticket checks queue filters and assignment.'}).json(); db=SessionLocal(); row=db.get(Ticket,t['id']); row.due_at=now()-timedelta(seconds=1); db.commit(); db.close()
+    agent_id=next(x['id'] for x in c.get('/api/users/staff',headers=agent).json()['items'] if x['email']=='agent1@concave.test')
+    assigned=c.post(f"/api/tickets/{t['ticket_number']}/assign",headers=agent,json={'assignee_id':agent_id,'expected_version':t['version']}).json()
+    assert c.get('/api/tickets?overdue=true',headers=agent).json()['total']>=1
+    assert any(x['ticket_number']==t['ticket_number'] for x in c.get(f'/api/tickets?assignee={agent_id}',headers=agent).json()['items'])
+
 def test_settings_recompute_and_bonus_endpoints():
     seed(True); c=TestClient(app); member=auth(c,'member1@concave.test','Member@123'); head=auth(c,'head@concave.test','Head@123')
     t=c.post('/api/tickets',headers=member,json={'category':'other','subject':'Internal follow-up','description':'Please ask the rewards team to confirm my payment status.'}).json(); no=t['ticket_number']

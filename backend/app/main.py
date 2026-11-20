@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .db import Base, engine, get_db, SessionLocal
@@ -120,8 +120,12 @@ def list_tickets(status:str|None=None,category:str|None=None,priority:str|None=N
     if status: stmt=stmt.where(Ticket.status==status)
     if category: stmt=stmt.where(Ticket.category==category)
     if priority: stmt=stmt.where(Ticket.priority==priority)
+    if overdue: stmt=stmt.where(or_(Ticket.status=="escalated",and_(Ticket.status.in_(OPEN),Ticket.waiting_for_member==False,Ticket.due_at<=now())))
     if assignee=="me": stmt=stmt.where(Ticket.assignee_id==u.id)
     elif assignee=="unassigned": stmt=stmt.where(Ticket.assignee_id==None)
+    elif assignee:
+        try: stmt=stmt.where(Ticket.assignee_id==int(assignee))
+        except ValueError: err("validation_error","Invalid assignee filter",422)
     if q:
         safe_q=q.replace('%','\\%').replace('_','\\_'); text=f"%{safe_q}%"; stmt=stmt.join(User,User.id==Ticket.member_id).where(or_(func.lower(User.name).like(text.lower(),escape="\\"),func.lower(User.email).like(text.lower(),escape="\\"),func.cast(Ticket.id,String).like(text,escape="\\")))
     total=db.scalar(select(func.count()).select_from(stmt.subquery()))
