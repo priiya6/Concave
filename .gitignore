@@ -3,6 +3,7 @@ __pycache__/
 *.tsbuildinfo
 *.py[cod]
 .pytest_cache/
+backend/pytest-cache-files-*/
 .mypy_cache/
 .env
 backend/data/

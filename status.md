@@ -37,7 +37,7 @@ Backend: 3 passed. Frontend: build passed; Vitest reports no test files. Mermaid
 
 ## Known bugs & resolved issues
 - Remote clone initially failed in the sandbox; rerun with approved network access succeeded and confirmed the remote is empty.
-- Fixed duplicate SQLite index, UTC-naive SQLite datetime comparisons, JSONResponse argument order, and pytest import path.
+- Fixed duplicate SQLite index, UTC-naive SQLite datetime comparisons, JSONResponse argument order, pytest import path, and Alembic module path.
 
 ## Exact next steps
 - Add UTCDateTime decorator and generated initial migration.
