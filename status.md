@@ -62,6 +62,7 @@ Backend: 8 passed. Frontend: 2 passed; production build passed. Live HTTP smoke 
 - `b6654df` feat: finish queue filters and verification polish (pushed)
 - `77a2378` feat: add head settings and notification polling (pushed)
 - `88ce7f2` docs: record pushed UI milestone (pushed)
+- `17f30d4` feat: complete member and escalation workflows (pushed)
 
 ## Does the latest build and test run pass?
 Yes for the current checkpoint: backend `pytest -q` (7 passed), frontend `npm test` (2 passed), frontend `npm run build` (passed), and live HTTP smoke passed.
