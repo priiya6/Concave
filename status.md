@@ -62,11 +62,13 @@ Backend: 8 passed. Frontend: 2 passed; production build passed. Migration downgr
 - `17f30d4` feat: complete member and escalation workflows (pushed)
 - `586a10c` docs: record final workflow milestone (pushed)
 - `caae724` docs: record final verification results (pushed)
-- Current uncommitted changes: migration lifecycle, staff controls/reopen regression, and documentation corrections.
+- `119055f` fix: make alembic migration lifecycle real (pushed)
+- `c3cf73a` feat: complete staff ticket actions (pushed)
+- `2e91007` docs: finalize assessment compliance audit (pushed)
 
 ## Does the latest build and test run pass?
 Yes: backend pytest (8 passed), frontend tests (2 passed), frontend production build, fresh migration, downgrade/upgrade, reset/seed, and live HTTP smoke all pass. Browser automation was unavailable.
 
 ## Suggested push plan
-- Commit the migration lifecycle, staff action/reopen coverage, and documentation corrections as separate verified commits.
-- Push those commits to `origin main` after the final checks.
+- All current verified commits are pushed to `origin/main` through `2e91007`.
+- Remaining optional work is full route-level frontend tests and complete bonus UI panels; push separately only if implemented and verified.
