@@ -52,7 +52,7 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Internal tickets, saved replies, auto-close, and history log | Done |
 | Responsive member/staff shell, mobile navigation, ticket detail, queue filters, and Head settings | Done |
 | Automated browser end-to-end coverage | Done |
-| Email, file attachments, and production deployment |  Future scope |
+| Email, file attachments, and production deployment | Future scope |
 
 # 6. Database Design
 
