@@ -27,10 +27,3 @@ erDiagram
     INTERNAL_TICKETS { int id PK int ticket_id FK string team string title text description string status int created_by FK datetime created_at int completed_by FK datetime completed_at text completion_note }
     SAVED_REPLIES { int id PK string title UK text body string category bool is_active int created_by FK datetime created_at datetime updated_at }
 ```
-
-## Key constraints and indexes
-
-Users have unique lower-cased email. Ticket IDs are SQLite autoincrement primary keys displayed as `TKT-{id:04d}` and never reused. Enum-like values use lowercase strings and checks. Foreign keys are enabled; ticket list/search, status, due time, creation time, notification ownership/read state, and message chronology are indexed.
-
-The planned SQLAlchemy models and one initial Alembic migration must match this ERD column by column. All datetimes are UTC-aware in Python and serialized as ISO-8601 `Z` values.
-
