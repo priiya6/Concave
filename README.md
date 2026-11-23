@@ -11,7 +11,29 @@ Python 3.14.2, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2, signed HMAC bearer t
 
 # 3. Setup and Run
 
-See [RUN_PROJECT.md](RUN_PROJECT.md) for the tested Windows PowerShell walkthrough. Create `.venv`, install `backend/requirements-dev.txt`, copy `.env.example`, run `alembic upgrade head` and `python -m app.scripts.seed` from `backend`, then run `uvicorn app.main:app --reload --port 8000`. In a second terminal run `npm install` and `npm run dev` from `frontend`.
+Prerequisites: Git, Python 3.11+ (tested with Python 3.14.2), and Node.js 20 LTS+ (tested with Node 22.18.0). From a fresh clone, open PowerShell at the repository root and run:
+
+```powershell
+cd backend
+python -m venv ..\.venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+..\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements-dev.txt
+Copy-Item .env.example .env
+alembic upgrade head
+python -m app.scripts.seed --reset
+uvicorn app.main:app --reload --port 8000
+```
+
+The backend runs at `http://127.0.0.1:8000` and its API documentation is at `/docs`. Leave that terminal running. In a second PowerShell terminal, from the same repository root, run:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. The copied backend `.env` uses a local SQLite database and a development-only signing key; it contains no secret that should be reused outside local assessment.
 
 # 4. Demo Logins and Test Data
 
@@ -24,15 +46,17 @@ Head: `head@concave.test` / `Head@123`; agents: `agent1@concave.test` and `agent
 | Mocked role login and permissions | Done |
 | Member create/list/detail/messages/confirm/reopen | Done |
 | Category default priority and TAT fields | Done |
-| Agent list/search/filter/assign/unassign/reply/request-info/priority/resolve | Done |
-| Head dashboard, escalations, notifications, settings, escalation job | Done (local UI/API) |
+| Agent list/search/filter/assign/unassign/reply/request-information/priority/resolve | Done |
+| Head dashboard, escalations, notifications, settings, and escalation job | Done |
 | Optimistic version checks and audit events | Done |
-| Internal tickets, saved replies, auto-close, history log | Done (local UI/API; browser verification still pending) |
-| Responsive member/staff shell, mobile navigation, ticket detail, queue filters, Head settings | Done (browser screenshots still pending) |
+| Internal tickets, saved replies, auto-close, and history log | Done |
+| Responsive member/staff shell, mobile navigation, ticket detail, queue filters, and Head settings | Done |
+| Automated browser end-to-end coverage | Partly done — backend/API and component tests exist; browser checks remain manual |
+| Email, file attachments, and production deployment | Not done — outside the local assessment scope |
 
 # 6. Database Design
 
-The schema contains users, TAT targets, app settings, tickets, messages, ticket events, notifications, internal tickets, and saved replies. Users own tickets and messages; tickets own messages, events, notifications, and internal work; TAT targets define ticket priority deadlines. See the frozen [database ERD](design/database-erd.md). `alembic upgrade head` recreates all ten application tables from a fresh SQLite database.
+The schema contains 9 application tables: users, TAT targets, app settings, tickets, ticket messages, ticket events, notifications, internal tickets, and saved replies. Users own tickets and messages; tickets own messages, events, notifications, and internal work; TAT targets define ticket priority deadlines. See the frozen [database ERD](design/database-erd.md). `alembic upgrade head` creates all 9 application tables in a fresh SQLite database.
 
 # 7. API Endpoints
 
@@ -125,8 +149,19 @@ GET /api/saved-replies or POST /api/saved-replies or DELETE /api/saved-replies/{
 
 # 8. Assumptions and Decisions
 
-TAT is continuous 24×7, including nights and weekends. Waiting for member pauses active TAT through a flag and resumes when the member replies; it is not a seventh status. Category defaults are Payment→High, Eligibility/Survey Issue→Medium, Profile Change/Other→Low because payment is trust-critical and study questions are time-bound. Reopen is only from Resolved, requires a reason, respects the configured window/attempts, and starts a fresh TAT cycle. TAT targets apply live; escalation leaves only by Resolve; any agent may act on any ticket; messages are a flat chronological thread. Dashboard open means open/in-progress/reopened/escalated; overdue means due time passed or escalated; resolution averages exclude waiting time. `Asia/Kolkata` is the default application timezone while storage is UTC. Authentication is a 12-hour HMAC-SHA256 signed mock token and every request reloads the user. Internal work is simulated by staff in the local demo.
+Working hours: the four-hour High-priority TAT runs continuously. A ticket created at 11 pm on Saturday therefore uses the night and weekend hours; the demo does not apply a business-hours calendar. This keeps the rule predictable and matches the implemented timer and escalation job.
+
+Waiting for the member: when Support requests information, the ticket is marked `waiting_for_member` and active TAT is paused. If the member replies two days later, those two days are excluded and the clock resumes with the remaining time. The waiting flag is stored separately from the public ticket status so the queue can still show the conversation clearly.
+
+Other decisions are deliberately small: category defaults are Payment → High, Eligibility/Survey Issue → Medium, and Profile Change/Other → Low; changing priority requires a reason; reopening is limited by the configured window and attempts and starts a fresh TAT cycle; resolution averages exclude member-waiting time. Timestamps are stored in UTC and displayed using the configured `Asia/Kolkata` timezone. Authentication is a 12-hour HMAC-SHA256 mock token for this local assessment, not a production identity system.
 
 # 9. Known Issues and Next Steps
 
-The implementation is locally runnable and the core workflow plus four bonus UI/API surfaces are covered by focused tests. A complete route-level test matrix and browser screenshots were not captured because no browser runtime was available. Mermaid CLI was unavailable because npm was cache-only; no walkthrough video or assessment emails are included.
+The local backend tests and frontend component/build checks pass, and the documented seeded workflow is available. Browser verification is still a manual checklist rather than automated end-to-end coverage. The application also intentionally uses SQLite, mock credentials, HMAC bearer tokens, and local polling; it is not production-ready authentication, deployment, or notification infrastructure.
+
+With more development time, the next useful steps would be:
+
+- Add Playwright coverage for the three role journeys and mobile layouts.
+- Replace mock authentication with the deployment identity provider and secure secret management.
+- Add file attachments, email/in-app delivery, and a production database migration/deployment path.
+- Add server-side pagination and stronger observability around background escalation jobs.
